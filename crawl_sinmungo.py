@@ -1,9 +1,10 @@
 import ray # 분산처리
 import requests
+import re
 from lxml import html
 import pandas as pd
 
-def get_cookie():
+def get_cookie(): # TODO 쿠키 사용하기
     url = 'https://www.epeople.go.kr/nep/pttn/gnrlPttn/pttnSmlrCaseList.npaid'
     res = requests.get(url)
     data = res.cookies.get_dict()
@@ -12,9 +13,6 @@ def get_cookie():
 
 @ray.remote
 def start_crawl_sinmungo(i=1,page=20, cookie='JSESSIONID=F9d-is7ERKta3LgKQA33TbQ4.euser22'):
-#     global cookie
-    # cookie='JSESSIONID=F9d-is7ERKta3LgKQA33TbQ4.euser22' # 자신의 국민 신문고 안의 쿠키 확인 후 저장
-    # 1000개의 데이터씩
     
     url = 'https://www.epeople.go.kr/nep/pttn/gnrlPttn/pttnSmlrCaseList.npaid' # 건의 리스트 url
     detail_url = 'https://www.epeople.go.kr/nep/pttn/gnrlPttn/pttnSmlrCaseDetail.npaid' # 건의 1개의 내용관련 url
@@ -24,7 +22,6 @@ def start_crawl_sinmungo(i=1,page=20, cookie='JSESSIONID=F9d-is7ERKta3LgKQA33TbQ
     question_list = []
     answer_list = []
     status_code_list = []
-    #while i<50:
 
     form_data = {
         'pageIndex':i,
