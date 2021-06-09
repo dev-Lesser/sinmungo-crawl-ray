@@ -56,7 +56,7 @@ def start_crawl_sinmungo(i=1,page=20, cookie='JSESSIONID=F9d-is7ERKta3LgKQA33TbQ
         duty_sctn_nm.append(nm)
 
 
-    for idx in tqdm(range(page)):
+    for idx in range(page):
 
         headers={
             'Cookie':cookie
@@ -108,7 +108,7 @@ if __name__ == '__main__':
     ray.init()
     cookie = 'JSESSIONID='+get_cookie() # cookies 를 직접 넣어야함
 
-    results = [start_crawl_sinmungo.remote(i=idx, page=200) for idx in range(1,100)]
+    results = [start_crawl_sinmungo.remote(i=idx, page=200) for idx in range(1,500)]
     contents = ray.get(results)
     title_list, question_list, answer_list, agency_list, date_list, status_code_list = [],[],[],[],[],[]
     for i in contents:
