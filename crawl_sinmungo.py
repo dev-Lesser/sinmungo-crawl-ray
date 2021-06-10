@@ -100,28 +100,41 @@ def start_crawl_sinmungo(i=0,page=20, cookie='JSESSIONID=8ijFL+F3LGTScOdOoK2FU8+
     return [title_list,question_list,answer_list,agency_list,date_list,status_code_list]
 if __name__ == '__main__':
     ray.init()
-    for _range in range(0,100):
-        results = [start_crawl_sinmungo.remote(i=idx, page=200) for idx in range(_range*5, 5+_range*5)]
-        contents = ray.get(results)
-        title_list, question_list, answer_list, agency_list, date_list, status_code_list = [],[],[],[],[],[]
-        for i in contents:
-            title_list += i[0]
-            question_list += i[1]
-            answer_list += i[2]
-            agency_list += i[3]
-            date_list += i[4]
-            status_code_list += i[5]
+    error_idx=0
+    _range=1
+    while True:
+        try:
+            while _range < 500 : 
+                print('Starting from {}\n'.format(error_idx))
+                error_idx = _range
+                results = [start_crawl_sinmungo.remote(i=idx, page=200) for idx in range(_range, 5+_range)]
+                contents = ray.get(results)
+                title_list, question_list, answer_list, agency_list, date_list, status_code_list = [],[],[],[],[],[]
+                for i in contents:
+                    title_list += i[0]
+                    question_list += i[1]
+                    answer_list += i[2]
+                    agency_list += i[3]
+                    date_list += i[4]
+                    status_code_list += i[5]
 
-        data = {
-            'title': title_list,
-            'question': question_list,
-            'answer': answer_list,
-            'agency': agency_list,
-            'datetime':date_list,
-            'status_code':status_code_list
-        }
+                data = {
+                    'title': title_list,
+                    'question': question_list,
+                    'answer': answer_list,
+                    'agency': agency_list,
+                    'datetime':date_list,
+                    'status_code':status_code_list
+                }
 
-        df = pd.DataFrame(data)
-        filename = 'results_{}_{}.csv'.format(str(_range*1000).zfill(6), str(_range*1000+1000).zfill(6))
-        df.to_csv(filename, encoding='UTF8', index=False)
-        print('Finished crawl data number {} file {}'.format(len(df), filename))
+                df = pd.DataFrame(data)
+                filename = 'results_{}_{}.csv'.format(str(int((_range-1)/5*1000)).zfill(6), str(int((_range-1)/5*1000+1000)).zfill(6))
+                df.to_csv(filename, encoding='UTF8', index=False)
+                print('Finished crawl data number {} file {}'.format(len(df), filename))
+                _range+=5
+        except Exception:
+            print('error index {}'.format(error_idx),'\n restarting from {}'.format(error_idx))
+            continue
+        if error_idx+5 >500:
+            break
+    print('Finished ! {} data'.format((error_idx-1)*200))
