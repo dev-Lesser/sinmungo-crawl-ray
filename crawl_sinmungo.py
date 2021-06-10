@@ -4,15 +4,9 @@ import re
 from lxml import html
 import pandas as pd
 
-def get_cookie(): # TODO 쿠키 사용하기
-    url = 'https://www.epeople.go.kr/nep/pttn/gnrlPttn/pttnSmlrCaseList.npaid'
-    res = requests.get(url)
-    data = res.cookies.get_dict()
-    return data['JSESSIONID']
-
 
 @ray.remote
-def start_crawl_sinmungo(i=1,page=20, cookie='JSESSIONID=F9d-is7ERKta3LgKQA33TbQ4.euser22'):
+def start_crawl_sinmungo(i=0,page=20, cookie='JSESSIONID=8ijFL+F3LGTScOdOoK2FU8+2.euser22'):
     
     url = 'https://www.epeople.go.kr/nep/pttn/gnrlPttn/pttnSmlrCaseList.npaid' # 건의 리스트 url
     detail_url = 'https://www.epeople.go.kr/nep/pttn/gnrlPttn/pttnSmlrCaseDetail.npaid' # 건의 1개의 내용관련 url
@@ -26,7 +20,7 @@ def start_crawl_sinmungo(i=1,page=20, cookie='JSESSIONID=F9d-is7ERKta3LgKQA33TbQ
     form_data = {
         'pageIndex':i,
         'rqstStDt': '2014-01-01', # 원하는 기간 설정
-        'rqstEndDt': '2021-06-09',
+        'rqstEndDt': '2021-06-10',
         'recordCountPerPage': page
     }
     headers={
@@ -64,9 +58,9 @@ def start_crawl_sinmungo(i=1,page=20, cookie='JSESSIONID=F9d-is7ERKta3LgKQA33TbQ
         form_data = {
             'epUnionSn': ep_union_sn[idx],
             'rqstStDt': '2014-01-01', # 원하는 기간 설정
-            'rqstEndDt': '2021-06-09',
+            'rqstEndDt': '2021-06-10',
             'dutySctnNm':duty_sctn_nm[idx],
-            '_csrf': '018df459-bfe7-4639-9667-0da86f242d89'
+            '_csrf': '41da3e65-4dc9-49c3-bbca-54968bc94c31'
 
         }
         res = requests.post(detail_url, headers=headers, data=form_data)
@@ -106,28 +100,28 @@ def start_crawl_sinmungo(i=1,page=20, cookie='JSESSIONID=F9d-is7ERKta3LgKQA33TbQ
     return [title_list,question_list,answer_list,agency_list,date_list,status_code_list]
 if __name__ == '__main__':
     ray.init()
-    cookie = 'JSESSIONID='+get_cookie() # cookies 를 직접 넣어야함
+    for _range in range(0,100):
+        results = [start_crawl_sinmungo.remote(i=idx, page=200) for idx in range(_range*5, 5+_range*5)]
+        contents = ray.get(results)
+        title_list, question_list, answer_list, agency_list, date_list, status_code_list = [],[],[],[],[],[]
+        for i in contents:
+            title_list += i[0]
+            question_list += i[1]
+            answer_list += i[2]
+            agency_list += i[3]
+            date_list += i[4]
+            status_code_list += i[5]
 
-    results = [start_crawl_sinmungo.remote(i=idx, page=200) for idx in range(1,500)]
-    contents = ray.get(results)
-    title_list, question_list, answer_list, agency_list, date_list, status_code_list = [],[],[],[],[],[]
-    for i in contents:
-        title_list += i[0]
-        question_list += i[1]
-        answer_list += i[2]
-        agency_list += i[3]
-        date_list += i[4]
-        status_code_list += i[5]
+        data = {
+            'title': title_list,
+            'question': question_list,
+            'answer': answer_list,
+            'agency': agency_list,
+            'datetime':date_list,
+            'status_code':status_code_list
+        }
 
-    data = {
-        'title': title_list,
-        'question': question_list,
-        'answer': answer_list,
-        'agency': agency_list,
-        'datetime':date_list,
-        'status_code':status_code_list
-    }
-
-    df = pd.DataFrame(data)
-    df.to_csv('results.csv', index=False)
-    print('Finished crawl data number {}'.format(len(df)))
+        df = pd.DataFrame(data)
+        filename = 'results_{}_{}.csv'.format(str(_range*1000).zfill(6), str(_range*1000+1000).zfill(6))
+        df.to_csv(filename, encoding='UTF8', index=False)
+        print('Finished crawl data number {} file {}'.format(len(df), filename))
