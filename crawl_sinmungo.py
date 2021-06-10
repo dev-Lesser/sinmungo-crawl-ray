@@ -101,11 +101,11 @@ def start_crawl_sinmungo(i=0,page=20, cookie='JSESSIONID=8ijFL+F3LGTScOdOoK2FU8+
 if __name__ == '__main__':
     ray.init()
     error_idx=0
-    _range=1
+    _range=231
     while True:
         try:
             while _range < 500 : 
-                print('Starting from {}\n'.format(error_idx))
+                print('Starting from {}\n'.format(_range))
                 error_idx = _range
                 results = [start_crawl_sinmungo.remote(i=idx, page=200) for idx in range(_range, 5+_range)]
                 contents = ray.get(results)
