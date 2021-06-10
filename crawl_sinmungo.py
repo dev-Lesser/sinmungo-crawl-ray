@@ -6,7 +6,7 @@ import pandas as pd
 
 
 @ray.remote
-def start_crawl_sinmungo(i=0,page=20, cookie='JSESSIONID=8ijFL+F3LGTScOdOoK2FU8+2.euser22'):
+def start_crawl_sinmungo(i=0,page=20, cookie='JSESSIONID=b0yitmMBpWWbf2jX9VX83+9d.euser22'):
     
     url = 'https://www.epeople.go.kr/nep/pttn/gnrlPttn/pttnSmlrCaseList.npaid' # 건의 리스트 url
     detail_url = 'https://www.epeople.go.kr/nep/pttn/gnrlPttn/pttnSmlrCaseDetail.npaid' # 건의 1개의 내용관련 url
@@ -60,7 +60,7 @@ def start_crawl_sinmungo(i=0,page=20, cookie='JSESSIONID=8ijFL+F3LGTScOdOoK2FU8+
             'rqstStDt': '2014-01-01', # 원하는 기간 설정
             'rqstEndDt': '2021-06-10',
             'dutySctnNm':duty_sctn_nm[idx],
-            '_csrf': '41da3e65-4dc9-49c3-bbca-54968bc94c31'
+            '_csrf': '721218f9-e01d-4f4f-ab43-c1cd55b3cbda' # csrf 와 cookie 값은 403에러가 떴을 때 변경 필요 > TODO 자동화
 
         }
         res = requests.post(detail_url, headers=headers, data=form_data)
@@ -86,14 +86,13 @@ def start_crawl_sinmungo(i=0,page=20, cookie='JSESSIONID=8ijFL+F3LGTScOdOoK2FU8+
             status_code_list.append(res.status_code)
         elif res.status_code ==500:
             # 비공개 처리로 들어가지 못할때
-            # print('500', title[idx])
             # 타이틀, 관련부처, 등록일만 저장, 질문내용, 답변내용은 None 으로
             question_list.append(None)
             answer_list.append(None)
             status_code_list.append(res.status_code)
         else:
 
-            # 그외 cookie 값 오류로 권한 에로 403 결과가 나올때, 쿠키 변경해야함.
+            # 그외 cookie 값 오류로 권한 에로 403 결과가 나올때, 쿠키,_csfr 변경해야함.
             print('error {}'.format(res.status_code), title[idx])
 
             return False
@@ -101,10 +100,10 @@ def start_crawl_sinmungo(i=0,page=20, cookie='JSESSIONID=8ijFL+F3LGTScOdOoK2FU8+
 if __name__ == '__main__':
     ray.init()
     error_idx=0
-    _range=231
+    _range=1
     while True:
         try:
-            while _range < 500 : 
+            while _range < 5 : 
                 print('Starting from {}\n'.format(_range))
                 error_idx = _range
                 results = [start_crawl_sinmungo.remote(i=idx, page=200) for idx in range(_range, 5+_range)]
