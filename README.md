@@ -3,6 +3,8 @@
 https://www.epeople.go.kr/nep/pttn/gnrlPttn/pttnSmlrCaseList.npaid
 사이트의 데이터를 분산 크롤합니다.
 
+## 해당 크롤러로 수집한 데이터는 개인적 분석 용도 이고 상업적 용도로 사용할 수 없습니다.
+
 ### library
 - ray
 - requests
